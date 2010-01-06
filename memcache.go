@@ -20,118 +20,143 @@
 package memcache
 
 import (
-	"bufio";
-	"bytes";
-	"net";
-	"os";
-	"regexp";
-	"strconv";
-	"strings";
+	"bufio"
+	"net"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type Memcache struct {
-	conn net.Conn;
+	conn net.Conn
 }
+
+type Error struct {
+	os.ErrorString
+}
+        
+var (
+	ConnectionError	os.Error = &Error{"memcache: not connected"}
+	ReadError		os.Error = &Error{"memcache: read error"}
+	WriteError		os.Error = &Error{"memcache: write error"}
+	DeleteError		os.Error = &Error{"memcache: delete error"}
+)
 
 func Connect(host string, port int) (*Memcache, os.Error) {
-	memc := new(Memcache);
-	addr := host + ":" + strconv.Itoa(port);
-	conn, err := net.Dial("tcp", "", addr);
+	memc := new(Memcache)
+	addr := host + ":" + strconv.Itoa(port)
+	conn, err := net.Dial("tcp", "", addr)
 	if err != nil {
-		return nil, err;
+		return nil, err
 	}
-	memc.conn = conn;
-	return memc, nil;
+	memc.conn = conn
+	return memc, nil
 }
 
-func (memc *Memcache) Close() {
-	if memc != nil && memc.conn != nil {
-		memc.conn.Close();
-	}
-}
-
-func (memc *Memcache) Get(key string) (value []byte, flags int) {
+func (memc *Memcache) Close() (err os.Error) {
 	if memc == nil || memc.conn == nil {
-		return nil, 0;
+		err = ConnectionError
+		return
 	}
-	cmd := "get " + key + "\r\n";
-	n, err := memc.conn.Write(strings.Bytes(cmd));
-	if err != nil || n != len(cmd) {
-		return nil, 0;
+	memc.conn.Close()
+	return
+}
+
+func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
+	if memc == nil || memc.conn == nil {
+		err = ConnectionError
+		return
 	}
-	line := make([]byte, 0);
-	buf := make([]byte, 1);
-	for {
-		n, err = memc.conn.Read(buf);
-		if err != nil || n != 1 {
-			return nil, 0;
-		}
-		line = bytes.Add(line, buf);
-		l := len(line);
-		if l > 1 && line[l-2] == '\r' && line[l-1] == '\n' {
-			break;
-		}
+	cmd := "get " + key + "\r\n"
+	n, err := memc.conn.Write(strings.Bytes(cmd))
+	if err != nil  {
+		return
 	}
-	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)");
-	a := re.MatchStrings(string(line));
+	reader := bufio.NewReader(memc.conn)
+	line, err := reader.ReadString('\n')
+	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)")
+	a := re.MatchStrings(line)
 	if len(a) != 3 {
-		return nil, 0;
+		err = ReadError
+		return
 	}
-	flags, _ = strconv.Atoi(a[1]);
-	l, _ := strconv.Atoi(a[2]);
-	value = make([]byte, l);
-	n, err = memc.conn.Read(value);
-	if err != nil || n != l {
-		return nil, 0;
+	flags, _ = strconv.Atoi(a[1])
+	l, _ := strconv.Atoi(a[2])
+	value = make([]byte, l)
+	n, err = reader.Read(value)
+	if err != nil {
+		return
 	}
-	buf = make([]byte, 7);
-	n, err = memc.conn.Read(buf);
-	if err != nil || string(buf) != "\r\nEND\r\n" {
-		return nil, 0;
+	if n != l {
+		err = ReadError
+		return
 	}
-	return value, flags;
+	line, err = reader.ReadString('\n')
+	if err != nil {
+		return
+	}
+	if line != "\r\n" {
+		err = ReadError
+		return
+	}
+	line, err = reader.ReadString('\n')
+	if err != nil {
+		return
+	}
+	if line != "END\r\n" {
+		err = ReadError
+		return
+	}
+	return
 }
 
-func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (bool) {
+func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (os.Error) {
 	if memc == nil || memc.conn == nil {
-		return false;
+		return ConnectionError
 	}
-	l := len(value);
-	cmd := "set " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n";
-	n, err := memc.conn.Write(strings.Bytes(cmd));
-	if err != nil || n != len(cmd) {
-		return false;
+	l := len(value)
+	cmd := "set " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
+	_, err := memc.conn.Write(strings.Bytes(cmd))
+	if err != nil {
+		return err
 	}
-	n, err = memc.conn.Write(value);
-	if err != nil || n != l {
-		return false;
+	_, err = memc.conn.Write(value)
+	if err != nil {
+		return err
 	}
-	n, err = memc.conn.Write(strings.Bytes("\r\n"));
-	if err != nil || n != 2 {
-		return false;
+	_, err = memc.conn.Write(strings.Bytes("\r\n"))
+	if err != nil {
+		return err
 	}
-	reader := bufio.NewReader(memc.conn);
-	line, err := reader.ReadString('\n');
-	if err != nil || line != "STORED\r\n" {
-		return false;
+	reader := bufio.NewReader(memc.conn)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return err
 	}
-	return true;
+	if line != "STORED\r\n" {
+		return WriteError
+	}
+	return nil
 }
 
-func (memc *Memcache) Delete(key string) (bool) {
+func (memc *Memcache) Delete(key string) (os.Error) {
 	if memc == nil || memc.conn == nil {
-		return false;
+		return ConnectionError
 	}
-	cmd := "delete " + key + "\r\n";
-	n, err := memc.conn.Write(strings.Bytes(cmd));
-	if err != nil || n != len(cmd) {
-		return false;
+	cmd := "delete " + key + "\r\n"
+	_, err := memc.conn.Write(strings.Bytes(cmd))
+	if err != nil {
+		return err
 	}
-	reader := bufio.NewReader(memc.conn);
-	line, err := reader.ReadString('\n');
-	if err != nil || line != "DELETED\r\n" {
-		return false;
+	reader := bufio.NewReader(memc.conn)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return err
 	}
-	return true;
+	if line != "DELETED\r\n"  {
+		return DeleteError
+	}
+	return nil
 }
 
