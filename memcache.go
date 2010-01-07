@@ -43,24 +43,23 @@ var (
 	DeleteError		os.Error = &Error{"memcache: delete error"}
 )
 
-func Connect(host string, port int) (*Memcache, os.Error) {
-	memc := new(Memcache)
+func Connect(host string, port int) (memc *Memcache, err os.Error) {
+	memc = new(Memcache)
 	addr := host + ":" + strconv.Itoa(port)
 	conn, err := net.Dial("tcp", "", addr)
 	if err != nil {
-		return nil, err
-	}
-	memc.conn = conn
-	return memc, nil
-}
-
-func (memc *Memcache) Close() (err os.Error) {
-	if memc == nil || memc.conn == nil {
-		err = ConnectionError
 		return
 	}
-	memc.conn.Close()
+	memc.conn = conn
 	return
+}
+
+func (memc *Memcache) Close() (os.Error) {
+	if memc == nil || memc.conn == nil {
+		return ConnectionError
+	}
+	memc.conn.Close()
+	return nil
 }
 
 func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
@@ -69,7 +68,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 		return
 	}
 	cmd := "get " + key + "\r\n"
-	n, err := memc.conn.Write(strings.Bytes(cmd))
+	_, err = memc.conn.Write(strings.Bytes(cmd))
 	if err != nil  {
 		return
 	}
@@ -84,7 +83,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	flags, _ = strconv.Atoi(a[1])
 	l, _ := strconv.Atoi(a[2])
 	value = make([]byte, l)
-	n, err = reader.Read(value)
+	n, err := reader.Read(value)
 	if err != nil {
 		return
 	}
@@ -117,15 +116,20 @@ func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (o
 	}
 	l := len(value)
 	cmd := "set " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
-	_, err := memc.conn.Write(strings.Bytes(cmd))
+	writer := bufio.NewWriter(memc.conn)
+	err := writer.WriteString(cmd)
 	if err != nil {
 		return err
 	}
-	_, err = memc.conn.Write(value)
+	_, err = writer.Write(value)
 	if err != nil {
 		return err
 	}
-	_, err = memc.conn.Write(strings.Bytes("\r\n"))
+	err = writer.WriteString("\r\n")
+	if err != nil {
+		return err
+	}
+	err = writer.Flush()
 	if err != nil {
 		return err
 	}
