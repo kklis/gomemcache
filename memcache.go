@@ -69,8 +69,8 @@ func (memc *Memcache) Close() (os.Error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
-	memc.conn.Close()
-	return nil
+	err := memc.conn.Close()
+	return err
 }
 
 func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
@@ -173,5 +173,15 @@ func (memc *Memcache) Delete(key string) (os.Error) {
 		return DeleteError
 	}
 	return nil
+}
+
+func (memc *Memcache) SetReadTimeout(nsec int64) (err os.Error) {
+	err = memc.conn.SetReadTimeout(nsec)
+	return
+}
+
+func (memc *Memcache) SetWriteTimeout(nsec int64) (err os.Error) {
+	err = memc.conn.SetWriteTimeout(nsec)
+	return
 }
 
