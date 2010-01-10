@@ -51,6 +51,7 @@ var (
 	ConnectionError	os.Error = &Error{"memcache: not connected"}
 	ReadError	os.Error = &Error{"memcache: read error"}
 	DeleteError	os.Error = &Error{"memcache: delete error"}
+	NotFoundError	os.Error = &Error{"memcache: not found"}
 )
 
 func Connect(host string, port int) (memc *Memcache, err os.Error) {
@@ -198,6 +199,39 @@ func (memc *Memcache) Delete(key string) (os.Error) {
 		return DeleteError
 	}
 	return nil
+}
+
+func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, err os.Error) {
+	if memc == nil || memc.conn == nil {
+		err = ConnectionError
+		return
+	}
+	s := cmd + " " + key + " " + strconv.Uitoa64(value) + "\r\n"
+	_, err = memc.conn.Write(strings.Bytes(s))
+	if err != nil {
+		return
+	}
+	reader := bufio.NewReader(memc.conn)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return
+	}
+	if line == "NOT_FOUND\r\n"  {
+		err = NotFoundError
+		return
+	}
+	i, err = strconv.Atoui64(strings.TrimSpace(line))
+	return
+}
+
+func (memc *Memcache) Incr(key string, value uint64) (i uint64, err os.Error) {
+	i, err = memc.incdec("incr", key, value)
+	return
+}
+
+func (memc *Memcache) Decr(key string, value uint64) (i uint64, err os.Error) {
+	i, err = memc.incdec("decr", key, value)
+	return
 }
 
 func (memc *Memcache) SetReadTimeout(nsec int64) (err os.Error) {

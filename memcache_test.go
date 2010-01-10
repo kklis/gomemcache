@@ -15,31 +15,33 @@ func TestClient(t *testing.T) {
 	if err != nil {
 		t.Error(err.String())
 	}
+	// clean
+	memc.Delete("foo")
+	// test add
 	err = memc.Add(key, strings.Bytes(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value)
+	// test replace
 	err = memc.Replace(key, strings.Bytes(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value)
+	// test append
 	err = memc.Append(key, strings.Bytes(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value + value)
+	// test prepend
 	err = memc.Prepend(key, strings.Bytes(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value + value + value)
-	err = memc.Set(key, strings.Bytes(value), flags, 0)
-	if err != nil {
-		t.Error(err.String())
-	}
-	testGet(t, memc, value)
+	// test delete
 	err = memc.Delete("foo")
 	if err != nil {
 		t.Error(err.String())
@@ -47,6 +49,26 @@ func TestClient(t *testing.T) {
 	_, _, err = memc.Get("foo")
 	if err == nil {
 		t.Error("Data not removed from memcache")
+	}
+	// test incr
+	err = memc.Set(key, strings.Bytes("1234"), flags, 0)
+	if err != nil {
+		t.Error(err.String())
+	}
+	i, err := memc.Incr(key, 9)
+	if err != nil {
+		t.Error(err.String())
+	}
+	if i != 1243 {
+		t.Error("Value expexcted: 1243\nValue received: " + strconv.Uitoa64(i))
+	}
+	// test decr
+	i, err = memc.Decr(key, 9)
+	if err != nil {
+		t.Error(err.String())
+	}
+	if i != 1234 {
+		t.Error("Value expexcted: 1234\nValue received: " + strconv.Uitoa64(i))
 	}
 }
 
