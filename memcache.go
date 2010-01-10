@@ -49,9 +49,8 @@ type Error struct {
         
 var (
 	ConnectionError	os.Error = &Error{"memcache: not connected"}
-	ReadError		os.Error = &Error{"memcache: read error"}
-	WriteError		os.Error = &Error{"memcache: write error"}
-	DeleteError		os.Error = &Error{"memcache: delete error"}
+	ReadError	os.Error = &Error{"memcache: read error"}
+	DeleteError	os.Error = &Error{"memcache: delete error"}
 )
 
 func Connect(host string, port int) (memc *Memcache, err os.Error) {
@@ -121,14 +120,14 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	return
 }
 
-func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (os.Error) {
+func (memc *Memcache) store(cmd string,key string, value []byte, flags int, exptime int64) (os.Error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
 	l := len(value)
-	cmd := "set " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
+	s := cmd + " " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
 	writer := bufio.NewWriter(memc.conn)
-	err := writer.WriteString(cmd)
+	err := writer.WriteString(s)
 	if err != nil {
 		return err
 	}
@@ -150,9 +149,35 @@ func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (o
 		return err
 	}
 	if line != "STORED\r\n" {
+		WriteError := os.NewError("memcache: " + strings.TrimSpace(line))
 		return WriteError
 	}
 	return nil
+}
+
+func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (err os.Error) {
+	err = memc.store("set", key, value, flags, exptime)
+	return
+}
+
+func (memc *Memcache) Add(key string, value []byte, flags int, exptime int64) (err os.Error) {
+	err = memc.store("add", key, value, flags, exptime)
+	return
+}
+
+func (memc *Memcache) Replace(key string, value []byte, flags int, exptime int64) (err os.Error) {
+	err = memc.store("replace", key, value, flags, exptime)
+	return
+}
+
+func (memc *Memcache) Append(key string, value []byte, flags int, exptime int64) (err os.Error) {
+	err = memc.store("append", key, value, flags, exptime)
+	return
+}
+
+func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64) (err os.Error) {
+	err = memc.store("prepend", key, value, flags, exptime)
+	return
 }
 
 func (memc *Memcache) Delete(key string) (os.Error) {
