@@ -7,6 +7,6 @@ The following commands are implemented:
 
 Basic guidelines:
 * Compile with "make".
-* Test with "gotest".
 * Start memcached at 127.0.0.1:11211 before running the test.
-* To link memcache_example.go into executable compile memcache.go first.
+* Test with "make test".
+* To compile memcache_example.go, compile memcache.go first.

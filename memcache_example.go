@@ -3,7 +3,6 @@ package main
 import (
 	"./memcache"
 	"fmt"
-	"strings"
 )
 
 func main() {
@@ -11,7 +10,7 @@ func main() {
 	if err != nil {
 		panic("Error: ", err.String())
 	}
-	err = memc.Set("foo", strings.Bytes("bar"), 0, 0)
+	err = memc.Set("foo", []uint8("bar"), 0, 0)
 	if err != nil {
 		panic("Error: ", err.String())
 	}

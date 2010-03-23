@@ -2,7 +2,6 @@ package memcache
  
 import (
 	"strconv"
-	"strings"
 	"testing"
 )
 
@@ -18,25 +17,25 @@ func TestClient(t *testing.T) {
 	// clean
 	memc.Delete("foo")
 	// test add
-	err = memc.Add(key, strings.Bytes(value), flags, 0)
+	err = memc.Add(key, []uint8(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value)
 	// test replace
-	err = memc.Replace(key, strings.Bytes(value), flags, 0)
+	err = memc.Replace(key, []uint8(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value)
 	// test append
-	err = memc.Append(key, strings.Bytes(value), flags, 0)
+	err = memc.Append(key, []uint8(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
 	testGet(t, memc, value + value)
 	// test prepend
-	err = memc.Prepend(key, strings.Bytes(value), flags, 0)
+	err = memc.Prepend(key, []uint8(value), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}
@@ -51,7 +50,7 @@ func TestClient(t *testing.T) {
 		t.Error("Data not removed from memcache")
 	}
 	// test incr
-	err = memc.Set(key, strings.Bytes("1234"), flags, 0)
+	err = memc.Set(key, []uint8("1234"), flags, 0)
 	if err != nil {
 		t.Error(err.String())
 	}

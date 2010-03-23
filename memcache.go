@@ -79,7 +79,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 		return
 	}
 	cmd := "get " + key + "\r\n"
-	_, err = memc.conn.Write(strings.Bytes(cmd))
+	_, err = memc.conn.Write([]uint8(cmd))
 	if err != nil  {
 		return
 	}
@@ -128,7 +128,7 @@ func (memc *Memcache) store(cmd string,key string, value []byte, flags int, expt
 	l := len(value)
 	s := cmd + " " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
 	writer := bufio.NewWriter(memc.conn)
-	err := writer.WriteString(s)
+	_, err := writer.WriteString(s)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (memc *Memcache) store(cmd string,key string, value []byte, flags int, expt
 	if err != nil {
 		return err
 	}
-	err = writer.WriteString("\r\n")
+	_, err = writer.WriteString("\r\n")
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (memc *Memcache) Delete(key string) (os.Error) {
 		return ConnectionError
 	}
 	cmd := "delete " + key + "\r\n"
-	_, err := memc.conn.Write(strings.Bytes(cmd))
+	_, err := memc.conn.Write([]uint8(cmd))
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, er
 		return
 	}
 	s := cmd + " " + key + " " + strconv.Uitoa64(value) + "\r\n"
-	_, err = memc.conn.Write(strings.Bytes(s))
+	_, err = memc.conn.Write([]uint8(s))
 	if err != nil {
 		return
 	}
