@@ -1,6 +1,6 @@
-include $(GOROOT)/src/Make.$(GOARCH)
+include $(GOROOT)/src/Make.inc
 
-TARG=mypackage
+TARG=memcache
 GOFILES=\
 	memcache.go\
 

@@ -46,7 +46,7 @@ type Memcache struct {
 type Error struct {
 	os.ErrorString
 }
-        
+
 var (
 	ConnectionError	os.Error = &Error{"memcache: not connected"}
 	ReadError	os.Error = &Error{"memcache: read error"}
@@ -86,7 +86,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	reader := bufio.NewReader(memc.conn)
 	line, err := reader.ReadString('\n')
 	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)")
-	a := re.MatchStrings(line)
+	a := re.FindStringSubmatch(line)
 	if len(a) != 3 {
 		err = ReadError
 		return
