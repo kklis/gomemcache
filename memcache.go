@@ -88,7 +88,11 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)")
 	a := re.FindStringSubmatch(line)
 	if len(a) != 3 {
-		err = ReadError
+		if line == "END\r\n" {
+			err = NotFoundError
+		} else {
+			err = ReadError
+		}
 		return
 	}
 	flags, _ = strconv.Atoi(a[1])
