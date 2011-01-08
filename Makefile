@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=memcache
+TARG=github.com/kklis/gomemcache
 GOFILES=\
 	memcache.go\
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./memcache"
+	"github.com/kklis/gomemcache"
 	"fmt"
 )
 

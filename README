@@ -5,8 +5,13 @@ The following commands are implemented:
 * delete
 * incr, decr
 
-Basic guidelines:
-* Compile with "make".
+Installation:
+* $ [sudo -E] goinstall github.com/kklis/gomemcache
+
+Source code:
+* Compile with "gomake".
 * Start memcached at 127.0.0.1:11211 before running the test.
-* Test with "make test".
-* To compile memcache_example.go, compile memcache.go first.
+* Test with "gomake test".
+
+Example usage:
+* Check memcache_example.go
