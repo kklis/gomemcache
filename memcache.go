@@ -98,9 +98,19 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	flags, _ = strconv.Atoi(a[1])
 	l, _ := strconv.Atoi(a[2])
 	value = make([]byte, l)
-	n, err := reader.Read(value)
-	if err != nil {
-		return
+	n := 0
+	for {
+		i, err := reader.Read(value[n:])
+		if i == 0 && err == os.EOF {
+			break
+		}
+		if err != nil {
+			return
+		}
+		n += i
+		if n >= l {
+			break
+		}
 	}
 	if n != l {
 		err = ReadError
