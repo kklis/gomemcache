@@ -57,7 +57,7 @@ var (
 func Connect(host string, port int) (memc *Memcache, err os.Error) {
 	memc = new(Memcache)
 	addr := host + ":" + strconv.Itoa(port)
-	conn, err := net.Dial("tcp", "", addr)
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return
 	}
