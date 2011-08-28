@@ -42,16 +42,16 @@ import (
 type Memcache struct {
 	conn net.Conn
 }
-
+/*
 type Error struct {
-	os.ErrorString
+	os.Error
 }
-
+*/
 var (
-	ConnectionError	os.Error = &Error{"memcache: not connected"}
-	ReadError	os.Error = &Error{"memcache: read error"}
-	DeleteError	os.Error = &Error{"memcache: delete error"}
-	NotFoundError	os.Error = &Error{"memcache: not found"}
+	ConnectionError	os.Error = os.NewError("memcache: not connected")
+	ReadError	os.Error = os.NewError("memcache: read error")
+	DeleteError	os.Error = os.NewError("memcache: delete error")
+	NotFoundError	os.Error = os.NewError("memcache: not found")
 )
 
 func Connect(host string, port int) (memc *Memcache, err os.Error) {
