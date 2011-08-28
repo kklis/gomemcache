@@ -42,11 +42,7 @@ import (
 type Memcache struct {
 	conn net.Conn
 }
-/*
-type Error struct {
-	os.Error
-}
-*/
+
 var (
 	ConnectionError	os.Error = os.NewError("memcache: not connected")
 	ReadError	os.Error = os.NewError("memcache: read error")
