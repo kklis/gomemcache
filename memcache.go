@@ -44,10 +44,10 @@ type Memcache struct {
 }
 
 var (
-	ConnectionError	os.Error = os.NewError("memcache: not connected")
-	ReadError	os.Error = os.NewError("memcache: read error")
-	DeleteError	os.Error = os.NewError("memcache: delete error")
-	NotFoundError	os.Error = os.NewError("memcache: not found")
+	ConnectionError os.Error = os.NewError("memcache: not connected")
+	ReadError       os.Error = os.NewError("memcache: read error")
+	DeleteError     os.Error = os.NewError("memcache: delete error")
+	NotFoundError   os.Error = os.NewError("memcache: not found")
 )
 
 func Connect(host string, port int) (memc *Memcache, err os.Error) {
@@ -61,7 +61,7 @@ func Connect(host string, port int) (memc *Memcache, err os.Error) {
 	return
 }
 
-func (memc *Memcache) Close() (os.Error) {
+func (memc *Memcache) Close() os.Error {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -76,7 +76,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	}
 	cmd := "get " + key + "\r\n"
 	_, err = memc.conn.Write([]uint8(cmd))
-	if err != nil  {
+	if err != nil {
 		return
 	}
 	reader := bufio.NewReader(memc.conn)
@@ -131,7 +131,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	return
 }
 
-func (memc *Memcache) store(cmd string,key string, value []byte, flags int, exptime int64) (os.Error) {
+func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exptime int64) os.Error {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -191,7 +191,7 @@ func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64
 	return
 }
 
-func (memc *Memcache) Delete(key string) (os.Error) {
+func (memc *Memcache) Delete(key string) os.Error {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -205,7 +205,7 @@ func (memc *Memcache) Delete(key string) (os.Error) {
 	if err != nil {
 		return err
 	}
-	if line != "DELETED\r\n"  {
+	if line != "DELETED\r\n" {
 		return DeleteError
 	}
 	return nil
@@ -226,7 +226,7 @@ func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, er
 	if err != nil {
 		return
 	}
-	if line == "NOT_FOUND\r\n"  {
+	if line == "NOT_FOUND\r\n" {
 		err = NotFoundError
 		return
 	}
@@ -253,4 +253,3 @@ func (memc *Memcache) SetWriteTimeout(nsec int64) (err os.Error) {
 	err = memc.conn.SetWriteTimeout(nsec)
 	return
 }
-
