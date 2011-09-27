@@ -80,6 +80,32 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 		return
 	}
 	reader := bufio.NewReader(memc.conn)
+	return memc.readValue(reader, key)
+}
+
+func (memc *Memcache) GetMulti(keys ...string) (values [][]byte, err os.Error) {
+	if memc == nil || memc.conn == nil {
+		err = ConnectionError
+		return
+	}
+	cmd := "get " + strings.Join(keys, " ") + "\r\n"
+	_, err = memc.conn.Write([]uint8(cmd))
+	if err != nil {
+		return
+	}
+	reader := bufio.NewReader(memc.conn)
+	values = make([][]byte, 0, len(keys))
+	for _, key := range keys {
+		value, _, err := memc.readValue(reader, key)
+		if err != nil {
+			return
+		}
+		values = append(values, value)
+	}
+	return
+}
+
+func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err os.Error) {
 	line, err := reader.ReadString('\n')
 	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)")
 	a := re.FindStringSubmatch(line)
@@ -117,14 +143,6 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 		return
 	}
 	if line != "\r\n" {
-		err = ReadError
-		return
-	}
-	line, err = reader.ReadString('\n')
-	if err != nil {
-		return
-	}
-	if line != "END\r\n" {
 		err = ReadError
 		return
 	}
