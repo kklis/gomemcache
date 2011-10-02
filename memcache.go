@@ -43,6 +43,11 @@ type Memcache struct {
 	conn net.Conn
 }
 
+type Result struct {
+	Value []uint8
+	Flags int
+}
+
 var (
 	ConnectionError os.Error = os.NewError("memcache: not connected")
 	ReadError       os.Error = os.NewError("memcache: read error")
@@ -83,7 +88,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	return memc.readValue(reader, key)
 }
 
-func (memc *Memcache) GetMulti(keys ...string) (values [][]byte, err os.Error) {
+func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err os.Error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
@@ -94,13 +99,13 @@ func (memc *Memcache) GetMulti(keys ...string) (values [][]byte, err os.Error) {
 		return
 	}
 	reader := bufio.NewReader(memc.conn)
-	values = make([][]byte, 0, len(keys))
+	results = map[string]Result{}
 	for _, key := range keys {
-		value, _, err := memc.readValue(reader, key)
+		value, flags, err := memc.readValue(reader, key)
 		if err != nil {
 			return
 		}
-		values = append(values, value)
+		results[key] = Result{Value: value, Flags: flags}
 	}
 	return
 }

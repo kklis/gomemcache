@@ -44,8 +44,35 @@ func TestGetMulti(t *testing.T) {
 	receivedValues, err := memc.GetMulti(KEY_1, KEY_2)
 	// then
 	assertNoError(t, err)
-	assertEqual(t, VALUE_1, string(receivedValues[0]))
-	assertEqual(t, VALUE_2, string(receivedValues[1]))
+	assertEqual(t, VALUE_1, string(receivedValues[KEY_1].Value))
+	assertEqual(t, VALUE_2, string(receivedValues[KEY_2].Value))
+	assertEqualInt(t, FLAGS, receivedValues[KEY_1].Flags)
+	assertEqualInt(t, FLAGS, receivedValues[KEY_2].Flags)
+	cleanUp()
+}
+
+func TestGetMultiForMissingKeys(t *testing.T) {
+	// given
+	connect(t)
+	// when
+	receivedValues, err := memc.GetMulti(KEY_1, KEY_2)
+	// then
+	assertNoError(t, err)
+	if len(receivedValues) != 0 {
+		t.Error("Expected emtpy result")
+	}
+	cleanUp()
+}
+
+func TestGetForMissingKey(t *testing.T) {
+	// given
+	connect(t)
+	// when
+	receivedValue, _, err := memc.Get(KEY_1)
+	// then
+	if err != NotFoundError {
+		t.Error("Expected NotFoundError. receivedValue:", string(receivedValue))
+	}
 	cleanUp()
 }
 
