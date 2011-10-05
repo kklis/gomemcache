@@ -34,7 +34,6 @@ import (
 	"bufio"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -81,9 +80,11 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	}
 	reader := bufio.NewReader(memc.conn)
 	line, err := reader.ReadString('\n')
-	re, _ := regexp.Compile("VALUE " + key + " ([0-9]+) ([0-9]+)")
-	a := re.FindStringSubmatch(line)
-	if len(a) != 3 {
+	if err != nil {
+		return
+	}
+	a := strings.Split(strings.TrimSpace(line), " ")
+	if len(a) != 4 || a[0] != "VALUE" || a[1] != key {
 		if line == "END\r\n" {
 			err = NotFoundError
 		} else {
@@ -91,8 +92,8 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 		}
 		return
 	}
-	flags, _ = strconv.Atoi(a[1])
-	l, _ := strconv.Atoi(a[2])
+	flags, _ = strconv.Atoi(a[2])
+	l, _ := strconv.Atoi(a[3])
 	value = make([]byte, l)
 	n := 0
 	for {

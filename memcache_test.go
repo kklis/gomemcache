@@ -1,5 +1,5 @@
 package memcache
- 
+
 import (
 	"strconv"
 	"testing"
@@ -15,7 +15,7 @@ func TestClient(t *testing.T) {
 		t.Error(err.String())
 	}
 	// clean
-	memc.Delete("foo")
+	memc.Delete(key)
 	// test add
 	err = memc.Add(key, []uint8(value), flags, 0)
 	if err != nil {
@@ -41,11 +41,11 @@ func TestClient(t *testing.T) {
 	}
 	testGet(t, memc, value + value + value)
 	// test delete
-	err = memc.Delete("foo")
+	err = memc.Delete(key)
 	if err != nil {
 		t.Error(err.String())
 	}
-	_, _, err = memc.Get("foo")
+	_, _, err = memc.Get(key)
 	if err == nil {
 		t.Error("Data not removed from memcache")
 	}
@@ -72,7 +72,7 @@ func TestClient(t *testing.T) {
 }
 
 func testGet(t *testing.T, memc *Memcache, s string) {
-	val, fl, err := memc.Get("foo")
+	val, fl, err := memc.Get(key)
 	if err != nil {
 		t.Error(err.String())
 	}
