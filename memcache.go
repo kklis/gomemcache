@@ -102,7 +102,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 			break
 		}
 		if err != nil {
-			return
+			return nil, 0, err
 		}
 		n += i
 		if n >= l {
