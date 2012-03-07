@@ -1,6 +1,6 @@
 This is a memcache client package for the Go programming language.
 The following commands are implemented:
-* get (single-key)
+* get (single and multi-key)
 * set, add, replace, append, prepend
 * delete
 * incr, decr
