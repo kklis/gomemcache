@@ -32,10 +32,12 @@ package memcache
 
 import (
 	"bufio"
+	"errors"
+	"io"
 	"net"
-	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Memcache struct {
@@ -48,13 +50,13 @@ type Result struct {
 }
 
 var (
-	ConnectionError os.Error = os.NewError("memcache: not connected")
-	ReadError       os.Error = os.NewError("memcache: read error")
-	DeleteError     os.Error = os.NewError("memcache: delete error")
-	NotFoundError   os.Error = os.NewError("memcache: not found")
+	ConnectionError = errors.New("memcache: not connected")
+	ReadError       = errors.New("memcache: read error")
+	DeleteError     = errors.New("memcache: delete error")
+	NotFoundError   = errors.New("memcache: not found")
 )
 
-func Connect(host string, port int) (memc *Memcache, err os.Error) {
+func Connect(host string, port int) (memc *Memcache, err error) {
 	memc = new(Memcache)
 	addr := host + ":" + strconv.Itoa(port)
 	conn, err := net.Dial("tcp", addr)
@@ -65,15 +67,15 @@ func Connect(host string, port int) (memc *Memcache, err os.Error) {
 	return
 }
 
-func (memc *Memcache) Close() os.Error {
+func (memc *Memcache) Close() (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
-	err := memc.conn.Close()
+	err = memc.conn.Close()
 	return err
 }
 
-func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
+func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
@@ -87,7 +89,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err os.Error) {
 	return memc.readValue(reader, key)
 }
 
-func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err os.Error) {
+func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
@@ -100,8 +102,9 @@ func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err o
 	reader := bufio.NewReader(memc.conn)
 	results = map[string]Result{}
 	for _, key := range keys {
-		value, flags, err := memc.readValue(reader, key)
-		if err != nil {
+		value, flags, err1 := memc.readValue(reader, key)
+		if err1 != nil {
+			err = err1;
 			return
 		}
 		results[key] = Result{Value: value, Flags: flags}
@@ -109,9 +112,10 @@ func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err o
 	return
 }
 
-func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err os.Error) {
-	line, err := reader.ReadString('\n')
-	if err != nil {
+func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err error) {
+	line, err1 := reader.ReadString('\n')
+	if err1 != nil {
+		err = err1;
 		return
 	}
 	a := strings.Split(strings.TrimSpace(line), " ")
@@ -128,11 +132,12 @@ func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte,
 	value = make([]byte, l)
 	n := 0
 	for {
-		i, err := reader.Read(value[n:])
-		if i == 0 && err == os.EOF {
+		i, err1 := reader.Read(value[n:])
+		if i == 0 && err == io.EOF {
 			break
 		}
-		if err != nil {
+		if err1 != nil {
+			err = err1;
 			return
 		}
 		n += i
@@ -155,14 +160,14 @@ func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte,
 	return
 }
 
-func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exptime int64) os.Error {
+func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exptime int64) (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
 	l := len(value)
-	s := cmd + " " + key + " " + strconv.Itoa(flags) + " " + strconv.Itoa64(exptime) + " " + strconv.Itoa(l) + "\r\n"
+	s := cmd + " " + key + " " + strconv.Itoa(flags) + " " + strconv.FormatInt(exptime, 10) + " " + strconv.Itoa(l) + "\r\n"
 	writer := bufio.NewWriter(memc.conn)
-	_, err := writer.WriteString(s)
+	_, err = writer.WriteString(s)
 	if err != nil {
 		return err
 	}
@@ -179,54 +184,57 @@ func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exp
 		return err
 	}
 	reader := bufio.NewReader(memc.conn)
-	line, err := reader.ReadString('\n')
-	if err != nil {
+	line, err1 := reader.ReadString('\n')
+	if err1 != nil {
+		err = err1
 		return err
 	}
 	if line != "STORED\r\n" {
-		WriteError := os.NewError("memcache: " + strings.TrimSpace(line))
+		WriteError := errors.New("memcache: " + strings.TrimSpace(line))
 		return WriteError
 	}
-	return nil
+	return
 }
 
-func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (err os.Error) {
+func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (err error) {
 	err = memc.store("set", key, value, flags, exptime)
 	return
 }
 
-func (memc *Memcache) Add(key string, value []byte, flags int, exptime int64) (err os.Error) {
+func (memc *Memcache) Add(key string, value []byte, flags int, exptime int64) (err error) {
 	err = memc.store("add", key, value, flags, exptime)
 	return
 }
 
-func (memc *Memcache) Replace(key string, value []byte, flags int, exptime int64) (err os.Error) {
+func (memc *Memcache) Replace(key string, value []byte, flags int, exptime int64) (err error) {
 	err = memc.store("replace", key, value, flags, exptime)
 	return
 }
 
-func (memc *Memcache) Append(key string, value []byte, flags int, exptime int64) (err os.Error) {
+func (memc *Memcache) Append(key string, value []byte, flags int, exptime int64) (err error) {
 	err = memc.store("append", key, value, flags, exptime)
 	return
 }
 
-func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64) (err os.Error) {
+func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64) (err error) {
 	err = memc.store("prepend", key, value, flags, exptime)
 	return
 }
 
-func (memc *Memcache) Delete(key string) os.Error {
+func (memc *Memcache) Delete(key string) (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
 	cmd := "delete " + key + "\r\n"
-	_, err := memc.conn.Write([]uint8(cmd))
-	if err != nil {
+	_, err1 := memc.conn.Write([]uint8(cmd))
+	if err1 != nil {
+		err = err1
 		return err
 	}
 	reader := bufio.NewReader(memc.conn)
-	line, err := reader.ReadString('\n')
-	if err != nil {
+	line, err1 := reader.ReadString('\n')
+	if err1 != nil {
+		err = err1
 		return err
 	}
 	if line != "DELETED\r\n" {
@@ -235,12 +243,12 @@ func (memc *Memcache) Delete(key string) os.Error {
 	return nil
 }
 
-func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, err os.Error) {
+func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, err error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
 	}
-	s := cmd + " " + key + " " + strconv.Uitoa64(value) + "\r\n"
+	s := cmd + " " + key + " " + strconv.FormatUint(value, 10) + "\r\n"
 	_, err = memc.conn.Write([]uint8(s))
 	if err != nil {
 		return
@@ -254,26 +262,26 @@ func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, er
 		err = NotFoundError
 		return
 	}
-	i, err = strconv.Atoui64(strings.TrimSpace(line))
+	i, err = strconv.ParseUint(strings.TrimSpace(line), 10, 64)
 	return
 }
 
-func (memc *Memcache) Incr(key string, value uint64) (i uint64, err os.Error) {
+func (memc *Memcache) Incr(key string, value uint64) (i uint64, err error) {
 	i, err = memc.incdec("incr", key, value)
 	return
 }
 
-func (memc *Memcache) Decr(key string, value uint64) (i uint64, err os.Error) {
+func (memc *Memcache) Decr(key string, value uint64) (i uint64, err error) {
 	i, err = memc.incdec("decr", key, value)
 	return
 }
 
-func (memc *Memcache) SetReadTimeout(nsec int64) (err os.Error) {
-	err = memc.conn.SetReadTimeout(nsec)
+func (memc *Memcache) SetReadTimeout(nsec int64) (err error) {
+	err = memc.conn.SetReadDeadline(time.Now().Add(time.Duration(nsec)))
 	return
 }
 
-func (memc *Memcache) SetWriteTimeout(nsec int64) (err os.Error) {
-	err = memc.conn.SetWriteTimeout(nsec)
+func (memc *Memcache) SetWriteTimeout(nsec int64) (err error) {
+	err = memc.conn.SetWriteDeadline(time.Now().Add(time.Duration(nsec)))
 	return
 }
