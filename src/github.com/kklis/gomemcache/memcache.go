@@ -28,7 +28,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package memcache
+package gomemcache
 
 import (
 	"bufio"
@@ -71,8 +71,7 @@ func (memc *Memcache) Close() (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
-	err = memc.conn.Close()
-	return err
+	return memc.conn.Close()
 }
 
 func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
@@ -193,32 +192,27 @@ func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exp
 		WriteError := errors.New("memcache: " + strings.TrimSpace(line))
 		return WriteError
 	}
-	return
+	return nil
 }
 
 func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (err error) {
-	err = memc.store("set", key, value, flags, exptime)
-	return
+	return memc.store("set", key, value, flags, exptime)
 }
 
 func (memc *Memcache) Add(key string, value []byte, flags int, exptime int64) (err error) {
-	err = memc.store("add", key, value, flags, exptime)
-	return
+	return memc.store("add", key, value, flags, exptime)
 }
 
 func (memc *Memcache) Replace(key string, value []byte, flags int, exptime int64) (err error) {
-	err = memc.store("replace", key, value, flags, exptime)
-	return
+	return memc.store("replace", key, value, flags, exptime)
 }
 
 func (memc *Memcache) Append(key string, value []byte, flags int, exptime int64) (err error) {
-	err = memc.store("append", key, value, flags, exptime)
-	return
+	return memc.store("append", key, value, flags, exptime)
 }
 
 func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64) (err error) {
-	err = memc.store("prepend", key, value, flags, exptime)
-	return
+	return memc.store("prepend", key, value, flags, exptime)
 }
 
 func (memc *Memcache) Delete(key string) (err error) {
@@ -277,11 +271,9 @@ func (memc *Memcache) Decr(key string, value uint64) (i uint64, err error) {
 }
 
 func (memc *Memcache) SetReadTimeout(nsec int64) (err error) {
-	err = memc.conn.SetReadDeadline(time.Now().Add(time.Duration(nsec)))
-	return
+	return memc.conn.SetReadDeadline(time.Now().Add(time.Duration(nsec)))
 }
 
 func (memc *Memcache) SetWriteTimeout(nsec int64) (err error) {
-	err = memc.conn.SetWriteDeadline(time.Now().Add(time.Duration(nsec)))
-	return
+	return memc.conn.SetWriteDeadline(time.Now().Add(time.Duration(nsec)))
 }

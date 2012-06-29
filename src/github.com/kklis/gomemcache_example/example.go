@@ -6,13 +6,13 @@ import (
 )
 
 func main() {
-	memc, err := memcache.Connect("127.0.0.1", 11211)
+	memc, err := gomemcache.Connect("127.0.0.1", 11211)
 	if err != nil {
-		panic("Error: " + err.String())
+		panic(err)
 	}
 	err = memc.Set("foo", []uint8("bar"), 0, 0)
 	if err != nil {
-		panic("Error: " + err.String())
+		panic(err)
 	}
 	val, fl, _ := memc.Get("foo")
 	fmt.Printf("%s %d\n", val, fl)

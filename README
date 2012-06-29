@@ -1,17 +1,21 @@
 This is a memcache client package for the Go programming language.
 The following commands are implemented:
-* get (single and multi-key)
+* get (single key)
 * set, add, replace, append, prepend
 * delete
 * incr, decr
 
 Installation:
-* $ [sudo -E] goinstall github.com/kklis/gomemcache
+* Set $GOPATH to point to $GOROOT
+* Copy the contents of the "src" directory to $GOROOT/src
+* Run "go install github.com/kklis/gomemcache" (you may need root access rights under Linux)
 
-Source code:
-* Compile with "gomake".
+Test:
+* Install gomemcache package
 * Start memcached at 127.0.0.1:11211 before running the test.
-* Test with "gomake test".
+* Run "go test github.com/kklis/gomemcache"
 
 Example usage:
-* Check memcache_example.go
+* Check src/github.com/kklis/gomemcache_example/example.go
+* Compile it with "go build  github.com/kklis/gomemcache_example"
+* Run it with "gomemcache_example"

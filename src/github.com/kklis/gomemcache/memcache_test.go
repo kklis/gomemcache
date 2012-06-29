@@ -1,11 +1,10 @@
-package memcache
+package gomemcache
 
 import (
-	"strconv"
-	"testing"
-	"strings"
 	"bufio"
-	"os"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 
@@ -141,7 +140,7 @@ func TestIncr(t *testing.T) {
 	i, err := memc.Incr(KEY_1, 9)
 	assertNoError(t, err)
 	if i != 1243 {
-		t.Error("Value expected: 1243\nValue received: " + strconv.Uitoa64(i))
+		t.Error("Value expected: 1243\nValue received: " + strconv.FormatUint(i, 10))
 	}
 	cleanUp()
 }
@@ -153,7 +152,7 @@ func TestDecr(t *testing.T) {
 	i, err := memc.Decr(KEY_1, 9)
 	assertNoError(t, err)
 	if i != 1234 {
-		t.Error("Value expected: 1234\nValue received: " + strconv.Uitoa64(i))
+		t.Error("Value expected: 1234\nValue received: " + strconv.FormatUint(i, 10))
 	}
 	cleanUp()
 }
@@ -214,9 +213,9 @@ func cleanUp() {
 	memc.Delete(KEY_2)
 }
 
-func assertNoError(t *testing.T, err os.Error) {
+func assertNoError(t *testing.T, err error) {
 	if err != nil {
-		t.Error(err.String())
+		t.Error(err)
 	}
 }
 
