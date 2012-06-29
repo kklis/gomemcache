@@ -89,24 +89,15 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
 }
 
 func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err error) {
-	if memc == nil || memc.conn == nil {
-		err = ConnectionError
-		return
-	}
-	cmd := "get " + strings.Join(keys, " ") + "\r\n"
-	_, err = memc.conn.Write([]uint8(cmd))
-	if err != nil {
-		return
-	}
-	reader := bufio.NewReader(memc.conn)
 	results = map[string]Result{}
 	for _, key := range keys {
-		value, flags, err1 := memc.readValue(reader, key)
-		if err1 != nil {
+		value, flags, err1 := memc.Get(key)
+		if err1 == nil {
+			results[key] = Result{Value: value, Flags: flags}
+		} else if err1 != NotFoundError {
 			err = err1;
 			return
 		}
-		results[key] = Result{Value: value, Flags: flags}
 	}
 	return
 }
