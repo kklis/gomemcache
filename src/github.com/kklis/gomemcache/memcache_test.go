@@ -63,6 +63,21 @@ func TestGetMultiForMissingKeys(t *testing.T) {
 	cleanUp()
 }
 
+func TestGetMultiForMissingOneKey(t *testing.T) {
+	// given
+	connect(t)
+	memc.Add(KEY_2, []uint8(VALUE_2), FLAGS, 0)
+	// when
+	receivedValues, err := memc.GetMulti(KEY_1, KEY_2)
+	// then
+	assertNoError(t, err)
+	assertEqual(t, "", string(receivedValues[KEY_1].Value))
+	assertEqual(t, VALUE_2, string(receivedValues[KEY_2].Value))
+	assertEqualInt(t, 0, receivedValues[KEY_1].Flags)
+	assertEqualInt(t, FLAGS, receivedValues[KEY_2].Flags)
+	cleanUp()
+}
+
 func TestGetForMissingKey(t *testing.T) {
 	// given
 	connect(t)
@@ -172,7 +187,7 @@ func TestParseResponseWithOneValue(t *testing.T) {
 	assertEqualInt(t, FLAGS, receivedFlags)
 }
 
-func TestParseResponseWithTwoValue(t *testing.T) {
+func TestParseResponseWithTwoValues(t *testing.T) {
 	// given
 	responseString := "VALUE " + KEY_1 + " " + strconv.Itoa(FLAGS) + " " + strconv.Itoa(len(VALUE_1)) + "\r\n" +
 		VALUE_1 + "\r\n" +
