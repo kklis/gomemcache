@@ -6,16 +6,14 @@ The following commands are implemented:
 * incr, decr
 
 Installation:
-* Set $GOPATH to point to $GOROOT
-* Copy the contents of the "src" directory to $GOROOT/src
 * Run "go install github.com/kklis/gomemcache" (you may need root access rights under Linux)
 
 Test:
-* Install gomemcache package
+* Install gomemcache package (as described above)
 * Start memcached at 127.0.0.1:11211 before running the test.
 * Run "go test github.com/kklis/gomemcache"
 
 Example usage:
-* Check src/github.com/kklis/gomemcache_example/example.go
-* Compile it with "go build  github.com/kklis/gomemcache_example"
-* Run it with "gomemcache_example"
+* Go to $GOROOT/src/pkg/github.com/kklis/gomemcache/example/
+* Compile example with "go build example.go"
+* Run the binary
