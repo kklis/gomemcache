@@ -57,12 +57,12 @@ var (
 	NotFoundError   = errors.New("memcache: not found")
 )
 
-func Connect(host string, port int) (memc *Memcache, err error) {
+func Connect(host string, port int) (*Memcache, error) {
 	addr := host + ":" + strconv.Itoa(port)
 	return Dial(addr)
 }
 
-func Dial(addr string) (*Memcache, error) {
+func Dial(addr string) (memc *Memcache, err error) {
 	memc = new(Memcache)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
@@ -79,7 +79,7 @@ func (memc *Memcache) Close() (err error) {
 	return memc.conn.Close()
 }
 
-func (memc *Memcache) FlushAll() error {
+func (memc *Memcache) FlushAll() (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
