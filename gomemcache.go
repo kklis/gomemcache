@@ -53,12 +53,17 @@ var (
 	ConnectionError = errors.New("memcache: not connected")
 	ReadError       = errors.New("memcache: read error")
 	DeleteError     = errors.New("memcache: delete error")
+	FlushAllError   = errors.New("memcache: flush_all error")
 	NotFoundError   = errors.New("memcache: not found")
 )
 
 func Connect(host string, port int) (memc *Memcache, err error) {
-	memc = new(Memcache)
 	addr := host + ":" + strconv.Itoa(port)
+	return Dial(addr)
+}
+
+func Dial(addr string) (*Memcache, error) {
+	memc = new(Memcache)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return
@@ -72,6 +77,28 @@ func (memc *Memcache) Close() (err error) {
 		return ConnectionError
 	}
 	return memc.conn.Close()
+}
+
+func (memc *Memcache) FlushAll() error {
+	if memc == nil || memc.conn == nil {
+		return ConnectionError
+	}
+	cmd := "flush_all\r\n"
+	_, err1 := memc.conn.Write([]uint8(cmd))
+	if err1 != nil {
+		err = err1
+		return err
+	}
+	reader := bufio.NewReader(memc.conn)
+	line, err1 := reader.ReadString('\n')
+	if err1 != nil {
+		err = err1
+		return err
+	}
+	if line != "OK\r\n" {
+		return FlushAllError
+	}
+	return nil
 }
 
 func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
