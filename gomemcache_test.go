@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 const (
 	KEY_1   string = "test-key-1"
 	KEY_2   string = "test-key-2"

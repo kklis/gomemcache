@@ -122,7 +122,7 @@ func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err e
 		if err1 == nil {
 			results[key] = Result{Value: value, Flags: flags}
 		} else if err1 != NotFoundError {
-			err = err1;
+			err = err1
 			return
 		}
 	}
@@ -132,7 +132,7 @@ func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err e
 func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err error) {
 	line, err1 := reader.ReadString('\n')
 	if err1 != nil {
-		err = err1;
+		err = err1
 		return
 	}
 	a := strings.Split(strings.TrimSpace(line), " ")
@@ -154,7 +154,7 @@ func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte,
 			break
 		}
 		if err1 != nil {
-			err = err1;
+			err = err1
 			return
 		}
 		n += i
