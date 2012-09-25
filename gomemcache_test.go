@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 const (
 	KEY_1   string = "test-key-1"
 	KEY_2   string = "test-key-2"
@@ -17,6 +16,13 @@ const (
 )
 
 var memc *Memcache
+
+func TestDial(t *testing.T) {
+	c, err := Dial("127.0.0.1:11211")
+	assertNoError(t, err)
+	err = c.Close()
+	assertNoError(t, err)
+}
 
 func TestSet(t *testing.T) {
 	connect(t)
@@ -140,6 +146,19 @@ func TestDelete(t *testing.T) {
 	err := memc.Add(KEY_1, []uint8(VALUE_1), FLAGS, 0)
 	assertNoError(t, err)
 	err = memc.Delete(KEY_1)
+	assertNoError(t, err)
+	_, _, err = memc.Get(KEY_1)
+	if err == nil {
+		t.Error("Data not removed from memcache")
+	}
+	cleanUp()
+}
+
+func TestFlushAll(t *testing.T) {
+	connect(t)
+	err := memc.Add(KEY_1, []uint8(VALUE_1), FLAGS, 0)
+	assertNoError(t, err)
+	err = memc.FlushAll()
 	assertNoError(t, err)
 	_, _, err = memc.Get(KEY_1)
 	if err == nil {
