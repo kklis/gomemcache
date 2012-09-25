@@ -12,6 +12,7 @@ Test:
 * Install gomemcache package (as described above)
 * Start memcached at 127.0.0.1:11211 before running the test.
 * Run "go test github.com/kklis/gomemcache"
+* Warning: Test suite includes a test that flushes all memcache content.
 
 Example usage:
 * Go to $GOROOT/src/pkg/github.com/kklis/gomemcache/example/
