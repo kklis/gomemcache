@@ -5,3 +5,4 @@ Roman Zabaznov - Get() read fix
 Ilya Grigorik - fix for latest net.Dial
 Thanabodee Charoenpiriyakij - fix for Go release r.59
 Arbo von Monkiewitsch - support for multi-get, tests refactoring
+Simon Menke - Added FlushAll() and Dial()
