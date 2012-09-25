@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kklis/gomemcache"
 	"fmt"
+	"github.com/kklis/gomemcache"
 )
 
 func main() {
