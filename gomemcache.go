@@ -58,13 +58,20 @@ var (
 )
 
 func Connect(host string, port int) (*Memcache, error) {
-	addr := host + ":" + strconv.Itoa(port)
-	return Dial(addr)
+	var network, addr string
+	if port == 0 {
+		network = "unix"
+		addr = host
+	} else {
+		network = "tcp"
+		addr = host + ":" + strconv.Itoa(port)
+	}
+	return Dial(network, addr)
 }
 
-func Dial(addr string) (memc *Memcache, err error) {
+func Dial(network, addr string) (memc *Memcache, err error) {
 	memc = new(Memcache)
-	conn, err := net.Dial("tcp", addr)
+	conn, err := net.Dial(network, addr)
 	if err != nil {
 		return
 	}

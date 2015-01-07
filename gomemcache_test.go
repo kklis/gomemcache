@@ -1,3 +1,8 @@
+/**
+ * Run two following commands on the background before this test.
+ * $ memcached
+ * $ memcached -s /tmp/memcached.sock -a 0755
+ */
 package gomemcache
 
 import (
@@ -17,8 +22,29 @@ const (
 
 var memc *Memcache
 
-func TestDial(t *testing.T) {
-	c, err := Dial("127.0.0.1:11211")
+func TestDial_TCP(t *testing.T) {
+	c, err := Dial("tcp", "127.0.0.1:11211")
+	assertNoError(t, err)
+	err = c.Close()
+	assertNoError(t, err)
+}
+
+func TestDial_UNIX(t *testing.T) {
+	c, err := Dial("unix", "/tmp/memcached.sock")
+	assertNoError(t, err)
+	err = c.Close()
+	assertNoError(t, err)
+}
+
+func testConnect_TCP(t *testing.T) {
+	c, err := Connect("127.0.0.1", 11211)
+	assertNoError(t, err)
+	err = c.Close()
+	assertNoError(t, err)
+}
+
+func testConnect_UNIX(t *testing.T) {
+	c, err := Connect("/tmp/memcached.sock", 0)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
