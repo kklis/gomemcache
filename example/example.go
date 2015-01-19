@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
+	// If you want to use this with UNIX domain socket, you can use like a following source code.
+	// On a UNIX domain socket, port is 0.
+	// mc, err := gomemcache.Connect("/path/to/memcached.sock", 0)
 	memc, err := gomemcache.Connect("127.0.0.1", 11211)
 	if err != nil {
 		panic(err)
