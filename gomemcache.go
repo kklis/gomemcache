@@ -1,5 +1,5 @@
 /*
- * Go memcache client package
+ * Go memcachedb client package
  *
  * Author: Krzysztof Kliś <krzysztof.klis@gmail.com>
  *
@@ -28,7 +28,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gomemcache
+package gomemcachedb
 
 import (
 	"bufio"
@@ -40,7 +40,7 @@ import (
 	"time"
 )
 
-type Memcache struct {
+type MemcacheDB struct {
 	conn net.Conn
 }
 
@@ -50,14 +50,14 @@ type Result struct {
 }
 
 var (
-	ConnectionError = errors.New("memcache: not connected")
-	ReadError       = errors.New("memcache: read error")
-	DeleteError     = errors.New("memcache: delete error")
-	FlushAllError   = errors.New("memcache: flush_all error")
-	NotFoundError   = errors.New("memcache: not found")
+	ConnectionError = errors.New("memcachedb: not connected")
+	ReadError       = errors.New("memcachedb: read error")
+	DeleteError     = errors.New("memcachedb: delete error")
+	FlushAllError   = errors.New("memcachedb: flush_all error")
+	NotFoundError   = errors.New("memcachedb: not found")
 )
 
-func Connect(host string, port int) (*Memcache, error) {
+func Connect(host string, port int) (*MemcacheDB, error) {
 	var network, addr string
 	if port == 0 {
 		network = "unix"
@@ -69,8 +69,8 @@ func Connect(host string, port int) (*Memcache, error) {
 	return Dial(network, addr)
 }
 
-func Dial(network, addr string) (memc *Memcache, err error) {
-	memc = new(Memcache)
+func Dial(network, addr string) (memc *MemcacheDB, err error) {
+	memc = new(MemcacheDB)
 	conn, err := net.Dial(network, addr)
 	if err != nil {
 		return
@@ -79,14 +79,14 @@ func Dial(network, addr string) (memc *Memcache, err error) {
 	return
 }
 
-func (memc *Memcache) Close() (err error) {
+func (memc *MemcacheDB) Close() (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
 	return memc.conn.Close()
 }
 
-func (memc *Memcache) FlushAll() (err error) {
+func (memc *MemcacheDB) FlushAll() (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -108,7 +108,7 @@ func (memc *Memcache) FlushAll() (err error) {
 	return nil
 }
 
-func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
+func (memc *MemcacheDB) Get(key string) (value []byte, flags int, err error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
@@ -122,7 +122,7 @@ func (memc *Memcache) Get(key string) (value []byte, flags int, err error) {
 	return memc.readValue(reader, key)
 }
 
-func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err error) {
+func (memc *MemcacheDB) GetMulti(keys ...string) (results map[string]Result, err error) {
 	results = map[string]Result{}
 	for _, key := range keys {
 		value, flags, err1 := memc.Get(key)
@@ -136,7 +136,7 @@ func (memc *Memcache) GetMulti(keys ...string) (results map[string]Result, err e
 	return
 }
 
-func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err error) {
+func (memc *MemcacheDB) readValue(reader *bufio.Reader, key string) (value []byte, flags int, err error) {
 	line, err1 := reader.ReadString('\n')
 	if err1 != nil {
 		err = err1
@@ -184,7 +184,7 @@ func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte,
 	return
 }
 
-func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) store(cmd string, key string, value []byte, flags int, exptime int64) (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -214,33 +214,33 @@ func (memc *Memcache) store(cmd string, key string, value []byte, flags int, exp
 		return err
 	}
 	if line != "STORED\r\n" {
-		WriteError := errors.New("memcache: " + strings.TrimSpace(line))
+		WriteError := errors.New("memcachedb: " + strings.TrimSpace(line))
 		return WriteError
 	}
 	return nil
 }
 
-func (memc *Memcache) Set(key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) Set(key string, value []byte, flags int, exptime int64) (err error) {
 	return memc.store("set", key, value, flags, exptime)
 }
 
-func (memc *Memcache) Add(key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) Add(key string, value []byte, flags int, exptime int64) (err error) {
 	return memc.store("add", key, value, flags, exptime)
 }
 
-func (memc *Memcache) Replace(key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) Replace(key string, value []byte, flags int, exptime int64) (err error) {
 	return memc.store("replace", key, value, flags, exptime)
 }
 
-func (memc *Memcache) Append(key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) Append(key string, value []byte, flags int, exptime int64) (err error) {
 	return memc.store("append", key, value, flags, exptime)
 }
 
-func (memc *Memcache) Prepend(key string, value []byte, flags int, exptime int64) (err error) {
+func (memc *MemcacheDB) Prepend(key string, value []byte, flags int, exptime int64) (err error) {
 	return memc.store("prepend", key, value, flags, exptime)
 }
 
-func (memc *Memcache) Delete(key string) (err error) {
+func (memc *MemcacheDB) Delete(key string) (err error) {
 	if memc == nil || memc.conn == nil {
 		return ConnectionError
 	}
@@ -262,7 +262,7 @@ func (memc *Memcache) Delete(key string) (err error) {
 	return nil
 }
 
-func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, err error) {
+func (memc *MemcacheDB) incdec(cmd string, key string, value uint64) (i uint64, err error) {
 	if memc == nil || memc.conn == nil {
 		err = ConnectionError
 		return
@@ -285,20 +285,20 @@ func (memc *Memcache) incdec(cmd string, key string, value uint64) (i uint64, er
 	return
 }
 
-func (memc *Memcache) Incr(key string, value uint64) (i uint64, err error) {
+func (memc *MemcacheDB) Incr(key string, value uint64) (i uint64, err error) {
 	i, err = memc.incdec("incr", key, value)
 	return
 }
 
-func (memc *Memcache) Decr(key string, value uint64) (i uint64, err error) {
+func (memc *MemcacheDB) Decr(key string, value uint64) (i uint64, err error) {
 	i, err = memc.incdec("decr", key, value)
 	return
 }
 
-func (memc *Memcache) SetReadTimeout(nsec int64) (err error) {
+func (memc *MemcacheDB) SetReadTimeout(nsec int64) (err error) {
 	return memc.conn.SetReadDeadline(time.Now().Add(time.Duration(nsec)))
 }
 
-func (memc *Memcache) SetWriteTimeout(nsec int64) (err error) {
+func (memc *MemcacheDB) SetWriteTimeout(nsec int64) (err error) {
 	return memc.conn.SetWriteDeadline(time.Now().Add(time.Duration(nsec)))
 }
