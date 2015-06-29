@@ -1,9 +1,4 @@
-/**
- * Run two following commands on the background before this test.
- * $ memcached
- * $ memcached -s /tmp/memcached.sock -a 0755
- */
-package gomemcache
+package gomemcachedb
 
 import (
 	"bufio"
@@ -20,31 +15,31 @@ const (
 	FLAGS   int    = 1
 )
 
-var memc *Memcache
+var memc *MemcacheDB
 
 func TestDial_TCP(t *testing.T) {
-	c, err := Dial("tcp", "127.0.0.1:11211")
+	c, err := Dial("tcp", "127.0.0.1:21201")
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
 }
 
 func TestDial_UNIX(t *testing.T) {
-	c, err := Dial("unix", "/tmp/memcached.sock")
+	c, err := Dial("unix", "/tmp/memcachedb.sock")
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
 }
 
 func testConnect_TCP(t *testing.T) {
-	c, err := Connect("127.0.0.1", 11211)
+	c, err := Connect("127.0.0.1", 21201)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
 }
 
 func testConnect_UNIX(t *testing.T) {
-	c, err := Connect("/tmp/memcached.sock", 0)
+	c, err := Connect("/tmp/memcachedb.sock", 0)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
@@ -175,7 +170,7 @@ func TestDelete(t *testing.T) {
 	assertNoError(t, err)
 	_, _, err = memc.Get(KEY_1)
 	if err == nil {
-		t.Error("Data not removed from memcache")
+		t.Error("Data not removed from memcachedb")
 	}
 	cleanUp()
 }
@@ -188,7 +183,7 @@ func TestFlushAll(t *testing.T) {
 	assertNoError(t, err)
 	_, _, err = memc.Get(KEY_1)
 	if err == nil {
-		t.Error("Data not removed from memcache")
+		t.Error("Data not removed from memcachedb")
 	}
 	cleanUp()
 }
@@ -263,7 +258,7 @@ func assertGet(t *testing.T, key string, expectedValue string) {
 }
 
 func connect(t *testing.T) {
-	connection, err := Connect("127.0.0.1", 11211)
+	connection, err := Connect("127.0.0.1", 21201)
 	assertNoError(t, err)
 	memc = connection
 }
