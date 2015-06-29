@@ -2,6 +2,7 @@ package gomemcachedb
 
 import (
 	"bufio"
+	"net"
 	"strconv"
 	"strings"
 	"testing"
@@ -17,15 +18,42 @@ const (
 
 var memc *MemcacheDB
 
+const testServer = "localhost:21201"
+const testSocket = "/tmp/memcachedb.sock"
+
+// originally from https://github.com/bradfitz/gomemcache/blob/master/memcache/memcache_test.go
+func setupTcp(t *testing.T) bool {
+	c, err := net.Dial("tcp", testServer)
+	if err != nil {
+		t.Skipf("skipping test; no server running at %s", testServer)
+	}
+	c.Write([]byte("flush_all\r\n"))
+	c.Close()
+	return true
+}
+
+func setupDomainSocket(t *testing.T) bool {
+	c, err := net.Dial("unix", testSocket)
+	if err != nil {
+		t.Skipf("skipping test; no server running at %s", testSocket)
+	}
+	c.Write([]byte("flush_all\r\n"))
+	c.Close()
+	return true
+}
+
 func TestDial_TCP(t *testing.T) {
-	c, err := Dial("tcp", "127.0.0.1:21201")
+	c, err := Dial("tcp", testServer)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
 }
 
 func TestDial_UNIX(t *testing.T) {
-	c, err := Dial("unix", "/tmp/memcachedb.sock")
+	if !setupDomainSocket(t) {
+		return
+	}
+	c, err := Dial("unix", testSocket)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
@@ -39,7 +67,10 @@ func testConnect_TCP(t *testing.T) {
 }
 
 func testConnect_UNIX(t *testing.T) {
-	c, err := Connect("/tmp/memcachedb.sock", 0)
+	if !setupDomainSocket(t) {
+		return
+	}
+	c, err := Connect(testSocket, 0)
 	assertNoError(t, err)
 	err = c.Close()
 	assertNoError(t, err)
@@ -258,6 +289,9 @@ func assertGet(t *testing.T, key string, expectedValue string) {
 }
 
 func connect(t *testing.T) {
+	if !setupTcp(t) {
+		return
+	}
 	connection, err := Connect("127.0.0.1", 21201)
 	assertNoError(t, err)
 	memc = connection
