@@ -340,3 +340,67 @@ func (memc *MemcacheDB) SetReadTimeout(nsec int64) (err error) {
 func (memc *MemcacheDB) SetWriteTimeout(nsec int64) (err error) {
 	return memc.conn.SetWriteDeadline(time.Now().Add(time.Duration(nsec)))
 }
+
+// statistics of memcachedb
+type Stat struct {
+	Pid                  int     // Process id of this server process
+	Uptime               int     // Number of seconds this server has been running
+	Time                 int     // current UNIX time according to the server
+	Version              string  // Version string of this server
+	PointerSize          int     // Default size of pointers on the host OS (generally 32 or 64)
+	RusageUser           float32 // Accumulated user time for this process (seconds:microseconds)
+	RusageSystem         float32 // Accumulated system time for this process (seconds:microseconds)
+	CurrItems            int     // Current number of items stored by the server
+	TotalItems           int     // Total number of items stored by this server ever since it started
+	Bytes                int     // Current number of bytes used by this server to store items
+	CurrConnections      int     // Number of open connections
+	TotalConnections     int     // Total number of connections opened since the server started running
+	ConnectionStructures int     // Number of connection structures allocated by the server
+	CmdGet               int     // Cumulative number of retrieval requests
+	CmdSet               int     // Cumulative number of storage requests
+	GetHits              int     // Number of keys that have been requested and found present
+	GetMisses            int     // Number of items that have been requested and not found
+	Evictions            int     // Number of valid items removed from cache to free memory for new items
+	BytesRead            int     // Total number of bytes read by this server from network
+	BytesWritten         int     // Total number of bytes sent by this server to network
+	Threads              int     // Number of worker threads requested.
+}
+
+// Stats fetches statistics from memcachedb.
+func (memc *MemcacheDB) Stats() (v map[string]interface{}, err error) {
+	if memc == nil || memc.conn == nil {
+		err = ConnectionError
+		return
+	}
+	cmd := "stats\r\n"
+	if _, err = memc.conn.Write([]uint8(cmd)); err != nil {
+		return
+	}
+	reader := bufio.NewReader(memc.conn)
+	return memc.readStats(reader)
+}
+
+// read stats response
+func (memc *MemcacheDB) readStats(reader *bufio.Reader) (v map[string]interface{}, err error) {
+	r := map[string]interface{}{}
+	for {
+		line, err1 := reader.ReadString('\n')
+		if err1 != nil {
+			err = err1
+			return r, err
+		}
+		a := strings.Split(strings.TrimSpace(line), " ")
+		if len(a) != 3 || a[0] != "STAT" {
+			if line == "END\r\n" {
+				err = NotFoundError
+			} else {
+				err = ReadError
+			}
+			return r, err
+		}
+		// FIXME not all fields are int. defined type by each fields.
+		// using struct tag or else.
+		r[a[1]], _ = strconv.Atoi(a[2])
+	}
+	return r, nil
+}
