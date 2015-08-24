@@ -7,3 +7,4 @@ Thanabodee Charoenpiriyakij - fix for Go release r.59
 Arbo von Monkiewitsch - support for multi-get, tests refactoring
 Simon Menke - Added FlushAll() and Dial()
 ando-masaki - Unix socket support
+Anton Bogdanovich - Darner compatibility fix
