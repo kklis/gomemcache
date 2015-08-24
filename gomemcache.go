@@ -143,7 +143,7 @@ func (memc *Memcache) readValue(reader *bufio.Reader, key string) (value []byte,
 		return
 	}
 	a := strings.Split(strings.TrimSpace(line), " ")
-	if len(a) != 4 || a[0] != "VALUE" || a[1] != key {
+	if len(a) != 4 || a[0] != "VALUE" {
 		if line == "END\r\n" {
 			err = NotFoundError
 		} else {
